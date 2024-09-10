@@ -44,6 +44,7 @@
 #define GREEN  1
 #define BLUE   2
 
+#define BCM_BITS 8
 
 /* USER CODE END PD */
 
@@ -145,14 +146,36 @@ int main(void)
   DWT_Init();
   HUB75_Init();
 
-  DrawPixel(15, 20, 200, 0, 0);
-  DrawPixel(15, 21, 0, 200, 0);
-  DrawPixel(15, 22, 0, 0, 200);
-  DrawPixel(60, 25, 100, 100, 100);
-  DrawPixel(61, 25, 200, 200, 200);
-  DrawPixel(62, 25, 10, 10, 10);
-  DrawPixel(30, 20, 255, 255, 255);
-//  DrawRectangle(0, 0, 63, 32, 0, 1, 0);
+//  DrawPixel(15, 20, 255, 0, 0);
+//  DrawPixel(15, 21, 0, 255, 0);
+//  DrawPixel(15, 22, 0, 0, 255);
+//
+//  DrawPixel(60, 10, 1, 1, 1);
+//  DrawPixel(61, 10, 127, 127, 127);
+//  DrawPixel(62, 10, 255, 255, 255);
+//
+//  DrawPixel(60, 25, 1, 0, 0);
+//  DrawPixel(61, 25, 127, 0, 0);
+//  DrawPixel(62, 25, 255, 0, 0);
+//
+//  DrawPixel(60, 22, 0, 0, 1);
+//  DrawPixel(61, 22, 0, 0, 127);
+//  DrawPixel(62, 22, 0, 0, 255);
+//
+//  DrawPixel(60, 19, 0, 1, 0);
+//  DrawPixel(61, 19, 0, 127, 0);
+//  DrawPixel(62, 19, 0, 255, 0);
+
+//  DrawRectangle(0, 0, 63, 31, 255, 255, 255);
+  DrawRectangle(16, 10, 20, 14, 255, 165, 0);
+  DrawRectangle(21, 10, 25, 14, 120, 255, 10);
+  DrawRectangle(26, 10, 30, 14, 255, 10, 100);
+  DrawRectangle(31, 10, 35, 14, 10, 130, 120);
+  DrawRectangle(36, 10, 40, 14, 255, 0, 0);
+  DrawRectangle(41, 10, 45, 14, 0, 255, 0);
+  DrawRectangle(46, 10, 50, 14, 0, 0, 255);
+  DrawRectangle(51, 10, 55, 14, 255, 255, 255);
+  DrawRectangle(56, 10, 60, 14, 1, 1, 1);
 
   /* USER CODE END 2 */
 
@@ -179,7 +202,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_GPIO_TogglePin(LD1_GPIO_PORT, LD1_PIN);
+//	  HAL_GPIO_TogglePin(LD1_GPIO_PORT, LD1_PIN);
 
 	  HUB75_SendRowData();
 
@@ -202,42 +225,57 @@ void HUB75_Init(void) {
 }
 
 void HUB75_SendRowData(void) {
-	for (uint16_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
-		// Set row address (A, B, C, D pins)
-		RGB_A(row);
-		RGB_B(row);
-		RGB_C(row);
-		RGB_D(row);
+    // Iterate over the bit planes from LSB to MSB
+    for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
+    	uint32_t delay_time = (1 << (BCM_BITS - bit + 1)) + 100; // Delay time doubles with each bit significance
 
-		DelayUs(10);
+        for (uint16_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
+            // Set row address (A, B, C, D pins)
+            RGB_A(row);
+            RGB_B(row);
+            RGB_C(row);
+            RGB_D(row);
 
-		for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
-			uint32_t index_upper = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - row - 1) * MATRIX_WIDTH);
-			index_upper *= 3;
+            // Loop through all the columns in the current row
+            for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
+                uint32_t index_upper = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - row - 1) * MATRIX_WIDTH);
+                index_upper *= 3; // 3 bytes per pixel (R, G, B)
 
-			RGB_R1(ImageBuffer[index_upper]);
-			RGB_G1(ImageBuffer[index_upper + 1]);
-			RGB_B1(ImageBuffer[index_upper + 2]);
+                uint8_t red1 = ImageBuffer[index_upper];
+                uint8_t green1 = ImageBuffer[index_upper + 1];
+                uint8_t blue1 = ImageBuffer[index_upper + 2];
 
-			uint32_t index_lower = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - (row + 16) - 1) * MATRIX_WIDTH);
-			index_lower *= 3;
+                uint32_t index_lower = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - (row + 16) - 1) * MATRIX_WIDTH);
+                index_lower *= 3;
 
-			RGB_R2(ImageBuffer[index_lower]);
-			RGB_G2(ImageBuffer[index_lower + 1]);
-			RGB_B2(ImageBuffer[index_lower + 2]);
+                uint8_t red2 = ImageBuffer[index_lower];
+                uint8_t green2 = ImageBuffer[index_lower + 1];
+                uint8_t blue2 = ImageBuffer[index_lower + 2];
 
-			RGB_CLK(1);
-			DelayUs(5);
-			RGB_CLK(0);
-		}
+                // Set the RGB values based on the current bit plane
+                RGB_R1((red1 >> bit) & 0x01);
+                RGB_G1((green1 >> bit) & 0x01);
+                RGB_B1((blue1 >> bit) & 0x01);
 
-		RGB_LAT(1);
-		RGB_LAT(0);
+                RGB_R2((red2 >> bit) & 0x01);
+                RGB_G2((green2 >> bit) & 0x01);
+                RGB_B2((blue2 >> bit) & 0x01);
 
-		RGB_OE(1);
-//		DelayUs(1);
-		RGB_OE(0);
-	}
+                // Toggle the clock to latch the data into the shift registers
+                RGB_CLK(1);
+                RGB_CLK(0);
+            }
+
+            // Latch data and enable output
+            RGB_LAT(1);
+            RGB_LAT(0);
+
+            // Enable output for this bit plane
+            RGB_OE(0);
+            DelayUs(delay_time); // Delay proportional to the bit weight
+            RGB_OE(1);
+        }
+    }
 }
 
 void Paint_NewImage(uint8_t image[])
