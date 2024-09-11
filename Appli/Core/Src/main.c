@@ -167,15 +167,26 @@ int main(void)
 //  DrawPixel(62, 19, 0, 255, 0);
 
 //  DrawRectangle(0, 0, 63, 31, 255, 255, 255);
-  DrawRectangle(16, 10, 20, 14, 255, 165, 0);
-  DrawRectangle(21, 10, 25, 14, 120, 255, 10);
-  DrawRectangle(26, 10, 30, 14, 255, 10, 100);
-  DrawRectangle(31, 10, 35, 14, 10, 130, 120);
-  DrawRectangle(36, 10, 40, 14, 255, 0, 0);
-  DrawRectangle(41, 10, 45, 14, 0, 255, 0);
-  DrawRectangle(46, 10, 50, 14, 0, 0, 255);
-  DrawRectangle(51, 10, 55, 14, 255, 255, 255);
-  DrawRectangle(56, 10, 60, 14, 1, 1, 1);
+  DrawRectangle(10, 13, 14, 17, 255, 165, 0);
+  DrawRectangle(15, 13, 19, 17, 120, 255, 10);
+  DrawRectangle(20, 13, 24, 17, 255, 10, 100);
+  DrawRectangle(25, 13, 29, 17, 10, 130, 120);
+  DrawRectangle(30, 13, 34, 17, 255, 0, 0);
+  DrawRectangle(35, 13, 39, 17, 0, 255, 0);
+  DrawRectangle(40, 13, 44, 17, 0, 0, 255);
+  DrawRectangle(45, 13, 49, 17, 255, 255, 255);
+  DrawRectangle(50, 13, 54, 17, 50, 50, 50);
+  DrawRectangle(55, 13, 59, 17, 1, 1, 1);
+
+
+//  DrawRectangle(1, 1, 5, 5, 255, 255, 255);
+
+//  DrawRectangle(1, 30, 5, 31, 255, 255, 255);
+//  DrawRectangle(1, 15, 5, 15, 255, 255, 255);
+
+//  DrawRectangle(59, 27, 63, 31, 255, 255, 255);
+
+
 
   /* USER CODE END 2 */
 
@@ -203,9 +214,17 @@ int main(void)
   while (1)
   {
 //	  HAL_GPIO_TogglePin(LD1_GPIO_PORT, LD1_PIN);
+//	  for (uint16_t row = 0; row < MATRIX_HEIGHT; row++) {
+//		  for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
+//			  DrawPixel(col, row, 255, 255, 255); // White color
+//		  }
+//
+//		  HUB75_SendRowData(); // Refresh display
+//		  memset(ImageBuffer, 0, 3*MATRIX_HEIGHT*MATRIX_WIDTH);
+//		  HAL_Delay(100);
+//	  }
 
-	  HUB75_SendRowData();
-
+	  HUB75_SendRowData(); // Refresh display
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -224,19 +243,20 @@ void HUB75_Init(void) {
     Paint_NewImage(ImageBuffer);
 }
 
+uint16_t base_delay = 5;
+
 void HUB75_SendRowData(void) {
     // Iterate over the bit planes from LSB to MSB
     for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
-    	uint32_t delay_time = (1 << (BCM_BITS - bit + 1)) + 100; // Delay time doubles with each bit significance
+    	uint32_t delay_time = base_delay * (1 << bit); // Delay time doubles with each bit significance
 
         for (uint16_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
-            // Set row address (A, B, C, D pins)
-            RGB_A(row);
-            RGB_B(row);
-            RGB_C(row);
-            RGB_D(row);
 
-            // Loop through all the columns in the current row
+            RGB_A(row);
+			RGB_B(row);
+			RGB_C(row);
+			RGB_D(row);
+
             for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
                 uint32_t index_upper = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - row - 1) * MATRIX_WIDTH);
                 index_upper *= 3; // 3 bytes per pixel (R, G, B)
@@ -261,16 +281,13 @@ void HUB75_SendRowData(void) {
                 RGB_G2((green2 >> bit) & 0x01);
                 RGB_B2((blue2 >> bit) & 0x01);
 
-                // Toggle the clock to latch the data into the shift registers
                 RGB_CLK(1);
                 RGB_CLK(0);
             }
 
-            // Latch data and enable output
-            RGB_LAT(1);
-            RGB_LAT(0);
+			RGB_LAT(1);
+			RGB_LAT(0);
 
-            // Enable output for this bit plane
             RGB_OE(0);
             DelayUs(delay_time); // Delay proportional to the bit weight
             RGB_OE(1);
@@ -285,13 +302,15 @@ void Paint_NewImage(uint8_t image[])
 
 void DrawPixel(uint16_t Xpoint, uint16_t Ypoint, uint8_t R, uint8_t G, uint8_t B)
 {
-	// Calculate the index for the pixel, each pixel takes 3 bytes
-	uint32_t index = (MATRIX_WIDTH - Xpoint - 1) + ((MATRIX_HEIGHT - Ypoint - 1) * MATRIX_WIDTH);
-	index *= 3; // Each pixel has 3 bytes (R, G, B)
+    // Make sure coordinates are within bounds
+    if (Xpoint >= MATRIX_WIDTH || Ypoint >= MATRIX_HEIGHT) return;
 
-	Image[index] = R; 			// Red value
-	Image[index + 1] = G; 	// Green value
-	Image[index + 2] = B; 	// Blue value
+    uint32_t index = (MATRIX_WIDTH - Xpoint - 1) + ((MATRIX_HEIGHT - Ypoint - 1) * MATRIX_WIDTH);
+    index *= 3; // Each pixel has 3 bytes (R, G, B)
+
+    Image[index] = R;       // Red value
+    Image[index + 1] = G;   // Green value
+    Image[index + 2] = B;   // Blue value
 }
 
 void DrawRectangle(uint16_t x_start, uint16_t y_start, uint16_t x_end, uint16_t y_end, uint8_t R, uint8_t G, uint8_t B) {
