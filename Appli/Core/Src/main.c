@@ -44,7 +44,7 @@
 #define GREEN  1
 #define BLUE   2
 
-#define BCM_BITS 8
+#define BCM_BITS 11
 
 /* USER CODE END PD */
 
@@ -94,13 +94,13 @@ void DelayUs(uint32_t us);
 
 void HUB75_Init(void);
 void HUB75_SendRowData(void);
+void HUB75_SendRowData2(void);
+
 void Paint_NewImage(uint8_t image[]);
 void DrawPixel(uint16_t Xpoint, uint16_t Ypoint, uint8_t R, uint8_t G, uint8_t B);
 void DrawRectangle(uint16_t x_start, uint16_t y_start, uint16_t x_end, uint16_t y_end, uint8_t R, uint8_t G, uint8_t B);
 void DrawChar(uint16_t x, uint16_t y, char c, uint8_t R, uint8_t G, uint8_t B);
 void DrawString(uint16_t x, uint16_t y, const char *str, uint8_t R, uint8_t G, uint8_t B);
-
-
 
 /* USER CODE END PFP */
 
@@ -172,7 +172,7 @@ int main(void)
 //  DrawPixel(61, 19, 0, 127, 0);
 //  DrawPixel(62, 19, 0, 255, 0);
 
-////  DrawRectangle(0, 0, 63, 31, 255, 255, 255);
+  DrawRectangle(0, 0, 63, 31, 255, 200, 1);
 //  DrawRectangle(10, 13, 14, 17, 255, 165, 0);
 //  DrawRectangle(15, 13, 19, 17, 120, 255, 10);
 //  DrawRectangle(20, 13, 24, 17, 255, 10, 100);
@@ -184,12 +184,12 @@ int main(void)
 //  DrawRectangle(50, 13, 54, 17, 50, 50, 50);
 //  DrawRectangle(55, 13, 59, 17, 1, 1, 1);
 
-  DrawString(5, 1, "HELLO", 255, 0, 0);
-  DrawString(5, 11, "WORLD", 0, 255, 0);
-  DrawString(5, 21, "ZIOMECZKY", 0, 0, 255);
-
-  DrawString(40, 1, "XD", 255, 255, 255);
-  DrawString(40, 11, "XD", 10, 10, 10);
+//  DrawString(5, 1, "HELLO", 255, 0, 0);
+//  DrawString(5, 11, "WORLD", 0, 255, 0);
+//  DrawString(5, 21, "ZIOMECZKY", 0, 0, 255);
+//
+//  DrawString(40, 1, "XD", 255, 255, 255);
+//  DrawString(40, 11, "XD", 10, 10, 10);
 
 //  DrawRectangle(1, 1, 5, 5, 255, 255, 255);
 
@@ -236,7 +236,7 @@ int main(void)
 //		  HAL_Delay(100);
 //	  }
 
-	  HUB75_SendRowData(); // Refresh display
+	  HUB75_SendRowData2(); // Refresh display
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -284,6 +284,8 @@ void HUB75_SendRowData(void) {
                 uint8_t green2 = ImageBuffer[index_lower + 1];
                 uint8_t blue2 = ImageBuffer[index_lower + 2];
 
+                RGB_OE(0);
+
                 // Set the RGB values based on the current bit plane
                 RGB_R1((red1 >> bit) & 0x01);
                 RGB_G1((green1 >> bit) & 0x01);
@@ -305,6 +307,81 @@ void HUB75_SendRowData(void) {
             RGB_OE(1);
         }
     }
+}
+
+void HUB75_SendRowData2(void) {
+	for (uint16_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
+
+		RGB_A(row);
+		RGB_B(row);
+		RGB_C(row);
+		RGB_D(row);
+
+//		for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
+//
+//			uint32_t index_upper = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - row - 1) * MATRIX_WIDTH);
+//			index_upper *= 3; // 3 bytes per pixel (R, G, B)
+//
+//			uint8_t red1 = ImageBuffer[index_upper];
+//			uint8_t green1 = ImageBuffer[index_upper + 1];
+//			uint8_t blue1 = ImageBuffer[index_upper + 2];
+//
+//			uint32_t index_lower = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - (row + 16) - 1) * MATRIX_WIDTH);
+//			index_lower *= 3;
+//
+//			uint8_t red2 = ImageBuffer[index_lower];
+//			uint8_t green2 = ImageBuffer[index_lower + 1];
+//			uint8_t blue2 = ImageBuffer[index_lower + 2];
+
+			for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
+				uint32_t delay_time = (1 << bit);
+
+				// Set the RGB values based on the current bit plane
+//				RGB_R1((red1 >> bit) & 0x01);
+//				RGB_G1((green1 >> bit) & 0x01);
+//				RGB_B1((blue1 >> bit) & 0x01);
+//
+//				RGB_R2((red2 >> bit) & 0x01);
+//				RGB_G2((green2 >> bit) & 0x01);
+//				RGB_B2((blue2 >> bit) & 0x01);
+
+//				RGB_CLK(1);
+//				RGB_CLK(0);
+
+//				RGB_R1(0);
+//				RGB_G1(0);
+//				RGB_B1(0);
+//
+//				RGB_R2(0);
+//				RGB_G2(0);
+//				RGB_B2(0);
+
+				RGB_OE(0);
+				DelayUs(delay_time);
+				RGB_OE(1);
+
+//				RGB_R1(1);
+//				RGB_G1(1);
+//				RGB_B1(1);
+//
+//				RGB_R2(1);
+//				RGB_G2(1);
+//				RGB_B2(1);
+//
+////				RGB_CLK(1);
+//
+//				for (uint32_t dimension; dimension < (MATRIX_WIDTH * MATRIX_HEIGHT); dimension++) {
+//					RGB_CLK(1);
+//					DelayUs(100);
+//					RGB_CLK(0);
+//				}
+				DelayUs(10);
+			}
+//			RGB_LAT(1);
+//			RGB_LAT(0);
+//		}
+
+	}
 }
 
 void Paint_NewImage(uint8_t image[])
