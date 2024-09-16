@@ -44,7 +44,7 @@
 #define GREEN  1
 #define BLUE   2
 
-#define BCM_BITS 11
+#define BCM_BITS 8
 
 /* USER CODE END PD */
 
@@ -60,14 +60,23 @@
 #define RGB_G2(value)  HAL_GPIO_WritePin(G2_GPIO_Port, G2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 #define RGB_B2(value)  HAL_GPIO_WritePin(B2_GPIO_Port, B2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
-#define RGB_A(value)   HAL_GPIO_WritePin(A_GPIO_Port, A_Pin, (value & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define RGB_B(value)   HAL_GPIO_WritePin(B_GPIO_Port, B_Pin, (value & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define RGB_C(value)   HAL_GPIO_WritePin(C_GPIO_Port, C_Pin, (value & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define RGB_D(value)   HAL_GPIO_WritePin(D_GPIO_Port, D_Pin, (value & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_A(value)   HAL_GPIO_WritePin(A_GPIO_Port, A_Pin, (value & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_B(value)   HAL_GPIO_WritePin(B_GPIO_Port, B_Pin, (value & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_C(value)   HAL_GPIO_WritePin(C_GPIO_Port, C_Pin, (value & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_D(value)   HAL_GPIO_WritePin(D_GPIO_Port, D_Pin, (value & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//
+//#define RGB_CLK(value) HAL_GPIO_WritePin(CLK_GPIO_Port, CLK_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_LAT(value) HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_OE(value)  HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
-#define RGB_CLK(value) HAL_GPIO_WritePin(CLK_GPIO_Port, CLK_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define RGB_LAT(value) HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define RGB_OE(value)  HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+#define RGB_A(value)   (value & 0x01 ? (GPIOP->ODR |= A_Pin) : (GPIOP->ODR &= ~A_Pin))
+#define RGB_B(value)   (value & 0x02 ? (GPIOP->ODR |= B_Pin) : (GPIOP->ODR &= ~B_Pin))
+#define RGB_C(value)   (value & 0x04 ? (GPIOP->ODR |= C_Pin) : (GPIOP->ODR &= ~C_Pin))
+#define RGB_D(value)   (value & 0x08 ? (GPIOP->ODR |= D_Pin) : (GPIOP->ODR &= ~D_Pin))
+
+#define RGB_CLK(value) (value ? (GPIOF->ODR |= CLK_Pin) : (GPIOF->ODR &= ~CLK_Pin))
+#define RGB_LAT(value) (value ? (GPIOF->ODR |= LAT_Pin) : (GPIOF->ODR &= ~LAT_Pin))
+#define RGB_OE(value)  (value ? (GPIOF->ODR |= OE_Pin) : (GPIOF->ODR &= ~OE_Pin))
 
 /* USER CODE END PM */
 
@@ -84,6 +93,8 @@ uint8_t *Image;
 
 const uint8_t Font5x7[][5];
 
+uint16_t base_delay = 15;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,6 +106,7 @@ void DelayUs(uint32_t us);
 void HUB75_Init(void);
 void HUB75_SendRowData(void);
 void HUB75_SendRowData2(void);
+void SetRGBPins(uint8_t rgb_data1, uint8_t rgb_data2);
 
 void Paint_NewImage(uint8_t image[]);
 void DrawPixel(uint16_t Xpoint, uint16_t Ypoint, uint8_t R, uint8_t G, uint8_t B);
@@ -172,7 +184,16 @@ int main(void)
 //  DrawPixel(61, 19, 0, 127, 0);
 //  DrawPixel(62, 19, 0, 255, 0);
 
-  DrawRectangle(0, 0, 63, 31, 255, 200, 1);
+  for (uint16_t oui = 0; oui < 64; oui++) {
+	  if (oui % 2 == 0) {
+		  DrawRectangle(oui, 0, oui, 31, 255, 255, 255);
+	  } else {
+		  DrawRectangle(oui, 0, oui, 31, 85, 85, 85);
+	  }
+  }
+
+//  DrawRectangle(0, 0, 63, 31, 255, 255, 255);
+
 //  DrawRectangle(10, 13, 14, 17, 255, 165, 0);
 //  DrawRectangle(15, 13, 19, 17, 120, 255, 10);
 //  DrawRectangle(20, 13, 24, 17, 255, 10, 100);
@@ -186,8 +207,7 @@ int main(void)
 
 //  DrawString(5, 1, "HELLO", 255, 0, 0);
 //  DrawString(5, 11, "WORLD", 0, 255, 0);
-//  DrawString(5, 21, "ZIOMECZKY", 0, 0, 255);
-//
+//  DrawString(5, 21, "ZIOMECZKI", 0, 0, 255);
 //  DrawString(40, 1, "XD", 255, 255, 255);
 //  DrawString(40, 11, "XD", 10, 10, 10);
 
@@ -225,17 +245,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  HAL_GPIO_TogglePin(LD1_GPIO_PORT, LD1_PIN);
-//	  for (uint16_t row = 0; row < MATRIX_HEIGHT; row++) {
-//		  for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
-//			  DrawPixel(col, row, 255, 255, 255); // White color
-//		  }
-//
-//		  HUB75_SendRowData(); // Refresh display
-//		  memset(ImageBuffer, 0, 3*MATRIX_HEIGHT*MATRIX_WIDTH);
-//		  HAL_Delay(100);
-//	  }
-
 	  HUB75_SendRowData2(); // Refresh display
     /* USER CODE END WHILE */
 
@@ -254,8 +263,6 @@ void HUB75_Init(void) {
 
     Paint_NewImage(ImageBuffer);
 }
-
-uint16_t base_delay = 5;
 
 void HUB75_SendRowData(void) {
     // Iterate over the bit planes from LSB to MSB
@@ -310,78 +317,63 @@ void HUB75_SendRowData(void) {
 }
 
 void HUB75_SendRowData2(void) {
-	for (uint16_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
+    for (uint16_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
 
-		RGB_A(row);
-		RGB_B(row);
-		RGB_C(row);
-		RGB_D(row);
+        RGB_A(row);
+        RGB_B(row);
+        RGB_C(row);
+        RGB_D(row);
 
-//		for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
-//
-//			uint32_t index_upper = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - row - 1) * MATRIX_WIDTH);
-//			index_upper *= 3; // 3 bytes per pixel (R, G, B)
-//
-//			uint8_t red1 = ImageBuffer[index_upper];
-//			uint8_t green1 = ImageBuffer[index_upper + 1];
-//			uint8_t blue1 = ImageBuffer[index_upper + 2];
-//
-//			uint32_t index_lower = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - (row + 16) - 1) * MATRIX_WIDTH);
-//			index_lower *= 3;
-//
-//			uint8_t red2 = ImageBuffer[index_lower];
-//			uint8_t green2 = ImageBuffer[index_lower + 1];
-//			uint8_t blue2 = ImageBuffer[index_lower + 2];
+        uint32_t row_upper_base = (MATRIX_HEIGHT - row - 1) * MATRIX_WIDTH;
+		uint32_t row_lower_base = (MATRIX_HEIGHT - (row + 16) - 1) * MATRIX_WIDTH;
 
-			for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
-				uint32_t delay_time = (1 << bit);
+        for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
+            uint32_t delay_time = base_delay * (1 << bit);
+            for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
+            	uint32_t index_upper = (MATRIX_WIDTH - col - 1) + row_upper_base;
+				uint32_t index_lower = (MATRIX_WIDTH - col - 1) + row_lower_base;
 
-				// Set the RGB values based on the current bit plane
-//				RGB_R1((red1 >> bit) & 0x01);
-//				RGB_G1((green1 >> bit) & 0x01);
-//				RGB_B1((blue1 >> bit) & 0x01);
-//
-//				RGB_R2((red2 >> bit) & 0x01);
-//				RGB_G2((green2 >> bit) & 0x01);
-//				RGB_B2((blue2 >> bit) & 0x01);
+				index_upper *= 3; // 3 bytes per pixel (R, G, B)
+				index_lower *= 3;
 
-//				RGB_CLK(1);
-//				RGB_CLK(0);
+				uint8_t red1 = ImageBuffer[index_upper];
+				uint8_t green1 = ImageBuffer[index_upper + 1];
+				uint8_t blue1 = ImageBuffer[index_upper + 2];
 
-//				RGB_R1(0);
-//				RGB_G1(0);
-//				RGB_B1(0);
-//
-//				RGB_R2(0);
-//				RGB_G2(0);
-//				RGB_B2(0);
+				uint8_t red2 = ImageBuffer[index_lower];
+				uint8_t green2 = ImageBuffer[index_lower + 1];
+				uint8_t blue2 = ImageBuffer[index_lower + 2];
 
-				RGB_OE(0);
-				DelayUs(delay_time);
-				RGB_OE(1);
+				uint32_t rgb_data1 = ((red1 >> bit) & 0x01) | ((green1 >> bit) & 0x01) << 1 | ((blue1 >> bit) & 0x01) << 2;
+				uint32_t rgb_data2 = ((red2 >> bit) & 0x01) | ((green2 >> bit) & 0x01) << 1 | ((blue2 >> bit) & 0x01) << 2;
 
-//				RGB_R1(1);
-//				RGB_G1(1);
-//				RGB_B1(1);
-//
-//				RGB_R2(1);
-//				RGB_G2(1);
-//				RGB_B2(1);
-//
-////				RGB_CLK(1);
-//
-//				for (uint32_t dimension; dimension < (MATRIX_WIDTH * MATRIX_HEIGHT); dimension++) {
-//					RGB_CLK(1);
-//					DelayUs(100);
-//					RGB_CLK(0);
-//				}
-				DelayUs(10);
-			}
-//			RGB_LAT(1);
-//			RGB_LAT(0);
-//		}
+				SetRGBPins(rgb_data1, rgb_data2);
 
-	}
+                RGB_CLK(1);
+                RGB_CLK(0);
+            }
+
+			SetRGBPins(0, 0);
+
+            RGB_LAT(1);
+            RGB_LAT(0);
+
+            RGB_OE(0);
+            DelayUs(delay_time);
+            RGB_OE(1);
+        }
+    }
+}
+
+void SetRGBPins(uint8_t rgb_data1, uint8_t rgb_data2) {
+    // Directly set/reset GPIOE pins for R1, G1, B1, R2
+	GPIOE->ODR = (GPIOE->ODR & ~(R1_Pin | G1_Pin | B1_Pin | R2_Pin | G2_Pin | B2_Pin)) |
+	                 ((rgb_data1 & 0x01 ? R1_Pin : 0) |
+	                  (rgb_data1 & 0x02 ? G1_Pin : 0) |
+	                  (rgb_data1 & 0x04 ? B1_Pin : 0) |
+	                  (rgb_data2 & 0x01 ? R2_Pin : 0) |
+	                  (rgb_data2 & 0x02 ? G2_Pin : 0) |
+	                  (rgb_data2 & 0x04 ? B2_Pin : 0));
 }
 
 void Paint_NewImage(uint8_t image[])
