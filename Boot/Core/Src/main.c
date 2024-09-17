@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "extmem_manager.h"
+#include "gpdma.h"
 #include "memorymap.h"
 #include "sbs.h"
 #include "xspi.h"
@@ -104,6 +105,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPDMA1_Init();
   MX_SBS_Init();
   MX_XSPI2_Init();
   MX_EXTMEM_MANAGER_Init();

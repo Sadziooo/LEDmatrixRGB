@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "gpdma.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -104,7 +105,7 @@ uint8_t *Image;
 
 const uint8_t Font5x7[][5];
 
-uint16_t base_delay = 15;
+uint16_t base_delay = 5;
 
 /* USER CODE END PV */
 
@@ -170,12 +171,14 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPDMA1_Init();
   /* USER CODE BEGIN 2 */
 
   DWT_Init();
   HUB75_Init();
 
-//  DrawPixel(15, 20, 255, 0, 0);
+  DrawPixel(63, 20, 255, 255, 255);
+  DrawPixel(0, 20, 255, 255, 255);
 //  DrawPixel(15, 21, 0, 255, 0);
 //  DrawPixel(15, 22, 0, 0, 255);
 //
@@ -195,13 +198,13 @@ int main(void)
 //  DrawPixel(61, 19, 0, 127, 0);
 //  DrawPixel(62, 19, 0, 255, 0);
 
-  for (uint16_t oui = 0; oui < 64; oui++) {
-	  if (oui % 2 == 0) {
-		  DrawRectangle(oui, 0, oui, 31, 255, 255, 255);
-	  } else {
-		  DrawRectangle(oui, 0, oui, 31, 85, 85, 85);
-	  }
-  }
+//  for (uint16_t oui = 0; oui < 64; oui++) {
+//	  if (oui % 2 == 0) {
+//		  DrawRectangle(oui, 0, oui, 31, 255, 255, 255);
+//	  } else {
+//		  DrawRectangle(oui, 0, oui, 31, 85, 85, 85);
+//	  }
+//  }
 
 //  DrawRectangle(0, 0, 63, 31, 255, 255, 255);
 
@@ -216,11 +219,11 @@ int main(void)
 //  DrawRectangle(50, 13, 54, 17, 50, 50, 50);
 //  DrawRectangle(55, 13, 59, 17, 1, 1, 1);
 
-//  DrawString(5, 1, "HELLO", 255, 0, 0);
-//  DrawString(5, 11, "WORLD", 0, 255, 0);
-//  DrawString(5, 21, "ZIOMECZKI", 0, 0, 255);
-//  DrawString(40, 1, "XD", 255, 255, 255);
-//  DrawString(40, 11, "XD", 10, 10, 10);
+  DrawString(5, 1, "HELLO", 255, 0, 0);
+  DrawString(5, 11, "WORLD", 0, 255, 0);
+  DrawString(5, 21, "ZIOMECZKI", 0, 0, 255);
+  DrawString(40, 1, "XD", 255, 255, 255);
+  DrawString(40, 11, "XD", 10, 10, 10);
 
 //  DrawRectangle(1, 1, 5, 5, 255, 255, 255);
 
@@ -278,6 +281,7 @@ void HUB75_Init(void) {
 void HUB75_SendRowData(void) {
     // Iterate over the bit planes from LSB to MSB
     for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
+
     	uint32_t delay_time = base_delay * (1 << bit); // Delay time doubles with each bit significance
 
         for (uint16_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
@@ -335,8 +339,8 @@ void HUB75_SendRowData2(void) {
         RGB_C(row);
         RGB_D(row);
 
-        uint32_t row_upper_base = (MATRIX_HEIGHT - row - 1) * MATRIX_WIDTH * 3;
-		uint32_t row_lower_base = (MATRIX_HEIGHT - (row + 16) - 1) * MATRIX_WIDTH * 3;
+        uint32_t row_upper_base = (MATRIX_HEIGHT - row) * MATRIX_WIDTH * 3;
+		uint32_t row_lower_base = (MATRIX_HEIGHT - (row + 16)) * MATRIX_WIDTH * 3;
 
         for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
 
@@ -344,13 +348,13 @@ void HUB75_SendRowData2(void) {
 
             for (uint16_t col = 0, upper_offset = 0, lower_offset = 0; col < MATRIX_WIDTH; col++, upper_offset += 3, lower_offset += 3) {
 
-            	uint8_t red1 = ImageBuffer[row_upper_base + upper_offset];
-				uint8_t green1 = ImageBuffer[row_upper_base + upper_offset + 1];
-				uint8_t blue1 = ImageBuffer[row_upper_base + upper_offset + 2];
+            	uint8_t red1 = ImageBuffer[row_upper_base - upper_offset];
+				uint8_t green1 = ImageBuffer[row_upper_base - upper_offset + 1];
+				uint8_t blue1 = ImageBuffer[row_upper_base - upper_offset + 2];
 
-				uint8_t red2 = ImageBuffer[row_lower_base + lower_offset];
-				uint8_t green2 = ImageBuffer[row_lower_base + lower_offset + 1];
-				uint8_t blue2 = ImageBuffer[row_lower_base + lower_offset + 2];
+				uint8_t red2 = ImageBuffer[row_lower_base - lower_offset];
+				uint8_t green2 = ImageBuffer[row_lower_base - lower_offset + 1];
+				uint8_t blue2 = ImageBuffer[row_lower_base - lower_offset + 2];
 
 				uint32_t rgb_data1 = ((red1 >> bit) & 0x01) | ((green1 >> bit) & 0x01) << 1 | ((blue1 >> bit) & 0x01) << 2;
 				uint32_t rgb_data2 = ((red2 >> bit) & 0x01) | ((green2 >> bit) & 0x01) << 1 | ((blue2 >> bit) & 0x01) << 2;
