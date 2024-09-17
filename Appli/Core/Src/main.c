@@ -52,13 +52,13 @@
 /* USER CODE BEGIN PM */
 
 // lines steering
-#define RGB_R1(value)  HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define RGB_G1(value)  HAL_GPIO_WritePin(G1_GPIO_Port, G1_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define RGB_B1(value)  HAL_GPIO_WritePin(B1_GPIO_Port, B1_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-
-#define RGB_R2(value)  HAL_GPIO_WritePin(R2_GPIO_Port, R2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define RGB_G2(value)  HAL_GPIO_WritePin(G2_GPIO_Port, G2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-#define RGB_B2(value)  HAL_GPIO_WritePin(B2_GPIO_Port, B2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_R1(value)  HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_G1(value)  HAL_GPIO_WritePin(G1_GPIO_Port, G1_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_B1(value)  HAL_GPIO_WritePin(B1_GPIO_Port, B1_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//
+//#define RGB_R2(value)  HAL_GPIO_WritePin(R2_GPIO_Port, R2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_G2(value)  HAL_GPIO_WritePin(G2_GPIO_Port, G2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
+//#define RGB_B2(value)  HAL_GPIO_WritePin(B2_GPIO_Port, B2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
 //#define RGB_A(value)   HAL_GPIO_WritePin(A_GPIO_Port, A_Pin, (value & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 //#define RGB_B(value)   HAL_GPIO_WritePin(B_GPIO_Port, B_Pin, (value & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET)
@@ -69,14 +69,25 @@
 //#define RGB_LAT(value) HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 //#define RGB_OE(value)  HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
 
-#define RGB_A(value)   (value & 0x01 ? (GPIOP->ODR |= A_Pin) : (GPIOP->ODR &= ~A_Pin))
-#define RGB_B(value)   (value & 0x02 ? (GPIOP->ODR |= B_Pin) : (GPIOP->ODR &= ~B_Pin))
-#define RGB_C(value)   (value & 0x04 ? (GPIOP->ODR |= C_Pin) : (GPIOP->ODR &= ~C_Pin))
-#define RGB_D(value)   (value & 0x08 ? (GPIOP->ODR |= D_Pin) : (GPIOP->ODR &= ~D_Pin))
+#define RGB_GPIO_Port	R1_GPIO_Port
+#define ABCD_GPIO_Port	A_GPIO_Port
 
-#define RGB_CLK(value) (value ? (GPIOF->ODR |= CLK_Pin) : (GPIOF->ODR &= ~CLK_Pin))
-#define RGB_LAT(value) (value ? (GPIOF->ODR |= LAT_Pin) : (GPIOF->ODR &= ~LAT_Pin))
-#define RGB_OE(value)  (value ? (GPIOF->ODR |= OE_Pin) : (GPIOF->ODR &= ~OE_Pin))
+#define RGB_R1(value)  	(value ? (R1_GPIO_Port->ODR |= R1_Pin) : (R1_GPIO_Port->ODR &= ~R1_Pin))
+#define RGB_G1(value)  	(value ? (G1_GPIO_Port->ODR |= G1_Pin) : (G1_GPIO_Port->ODR &= ~G1_Pin))
+#define RGB_B1(value)  	(value ? (B1_GPIO_Port->ODR |= B1_Pin) : (B1_GPIO_Port->ODR &= ~B1_Pin))
+
+#define RGB_R2(value)  	(value ? (R2_GPIO_Port->ODR |= R2_Pin) : (R2_GPIO_Port->ODR &= ~R2_Pin))
+#define RGB_G2(value)  	(value ? (G2_GPIO_Port->ODR |= G2_Pin) : (G2_GPIO_Port->ODR &= ~G2_Pin))
+#define RGB_B2(value)  	(value ? (B2_GPIO_Port->ODR |= B2_Pin) : (B2_GPIO_Port->ODR &= ~B2_Pin))
+
+#define RGB_A(value)   		(value & 0x01 ? (A_GPIO_Port->ODR |= A_Pin) : (A_GPIO_Port->ODR &= ~A_Pin))
+#define RGB_B(value)   		(value & 0x02 ? (B_GPIO_Port->ODR |= B_Pin) : (B_GPIO_Port->ODR &= ~B_Pin))
+#define RGB_C(value)   	(value & 0x04 ? (C_GPIO_Port->ODR |= C_Pin) : (C_GPIO_Port->ODR &= ~C_Pin))
+#define RGB_D(value)   	(value & 0x08 ? (D_GPIO_Port->ODR |= D_Pin) : (D_GPIO_Port->ODR &= ~D_Pin))
+
+#define RGB_CLK(value) 	(value ? (CLK_GPIO_Port->ODR |= CLK_Pin) : (CLK_GPIO_Port->ODR &= ~CLK_Pin))
+#define RGB_LAT(value) 	(value ? (LAT_GPIO_Port->ODR |= LAT_Pin) : (LAT_GPIO_Port->ODR &= ~LAT_Pin))
+#define RGB_OE(value)  	(value ? (OE_GPIO_Port->ODR |= OE_Pin) : (OE_GPIO_Port->ODR &= ~OE_Pin))
 
 /* USER CODE END PM */
 
@@ -324,25 +335,22 @@ void HUB75_SendRowData2(void) {
         RGB_C(row);
         RGB_D(row);
 
-        uint32_t row_upper_base = (MATRIX_HEIGHT - row - 1) * MATRIX_WIDTH;
-		uint32_t row_lower_base = (MATRIX_HEIGHT - (row + 16) - 1) * MATRIX_WIDTH;
+        uint32_t row_upper_base = (MATRIX_HEIGHT - row - 1) * MATRIX_WIDTH * 3;
+		uint32_t row_lower_base = (MATRIX_HEIGHT - (row + 16) - 1) * MATRIX_WIDTH * 3;
 
         for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
+
             uint32_t delay_time = base_delay * (1 << bit);
-            for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
-            	uint32_t index_upper = (MATRIX_WIDTH - col - 1) + row_upper_base;
-				uint32_t index_lower = (MATRIX_WIDTH - col - 1) + row_lower_base;
 
-				index_upper *= 3; // 3 bytes per pixel (R, G, B)
-				index_lower *= 3;
+            for (uint16_t col = 0, upper_offset = 0, lower_offset = 0; col < MATRIX_WIDTH; col++, upper_offset += 3, lower_offset += 3) {
 
-				uint8_t red1 = ImageBuffer[index_upper];
-				uint8_t green1 = ImageBuffer[index_upper + 1];
-				uint8_t blue1 = ImageBuffer[index_upper + 2];
+            	uint8_t red1 = ImageBuffer[row_upper_base + upper_offset];
+				uint8_t green1 = ImageBuffer[row_upper_base + upper_offset + 1];
+				uint8_t blue1 = ImageBuffer[row_upper_base + upper_offset + 2];
 
-				uint8_t red2 = ImageBuffer[index_lower];
-				uint8_t green2 = ImageBuffer[index_lower + 1];
-				uint8_t blue2 = ImageBuffer[index_lower + 2];
+				uint8_t red2 = ImageBuffer[row_lower_base + lower_offset];
+				uint8_t green2 = ImageBuffer[row_lower_base + lower_offset + 1];
+				uint8_t blue2 = ImageBuffer[row_lower_base + lower_offset + 2];
 
 				uint32_t rgb_data1 = ((red1 >> bit) & 0x01) | ((green1 >> bit) & 0x01) << 1 | ((blue1 >> bit) & 0x01) << 2;
 				uint32_t rgb_data2 = ((red2 >> bit) & 0x01) | ((green2 >> bit) & 0x01) << 1 | ((blue2 >> bit) & 0x01) << 2;
@@ -367,7 +375,7 @@ void HUB75_SendRowData2(void) {
 
 void SetRGBPins(uint8_t rgb_data1, uint8_t rgb_data2) {
     // Directly set/reset GPIOE pins for R1, G1, B1, R2
-	GPIOE->ODR = (GPIOE->ODR & ~(R1_Pin | G1_Pin | B1_Pin | R2_Pin | G2_Pin | B2_Pin)) |
+	RGB_GPIO_Port->ODR = (RGB_GPIO_Port->ODR & ~(R1_Pin | G1_Pin | B1_Pin | R2_Pin | G2_Pin | B2_Pin)) |
 	                 ((rgb_data1 & 0x01 ? R1_Pin : 0) |
 	                  (rgb_data1 & 0x02 ? G1_Pin : 0) |
 	                  (rgb_data1 & 0x04 ? B1_Pin : 0) |
