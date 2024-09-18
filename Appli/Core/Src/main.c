@@ -203,7 +203,7 @@ int main(void)
   DrawRectangle(45, 21, 49, 25, 255, 255, 255);
   DrawRectangle(50, 21, 54, 25, 50, 50, 50);
   DrawRectangle(55, 21, 59, 25, 1, 1, 1);
-//
+////
   DrawString(5, 1, "HELLO", 255, 0, 0);
   DrawString(5, 11, "WORLD", 0, 255, 0);
   DrawString(37, 1, "XD", 0, 0, 255);
@@ -328,7 +328,6 @@ void HUB75_SendRowData2(void) {
         for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
 
             uint32_t delay_time = base_delay * (1 << bit);
-//            uint32_t delay_time = (1 << bit) / 10;
 
             for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
 
