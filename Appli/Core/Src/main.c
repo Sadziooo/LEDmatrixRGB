@@ -53,23 +53,6 @@
 /* USER CODE BEGIN PM */
 
 // lines steering
-//#define RGB_R1(value)  HAL_GPIO_WritePin(R1_GPIO_Port, R1_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//#define RGB_G1(value)  HAL_GPIO_WritePin(G1_GPIO_Port, G1_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//#define RGB_B1(value)  HAL_GPIO_WritePin(B1_GPIO_Port, B1_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//
-//#define RGB_R2(value)  HAL_GPIO_WritePin(R2_GPIO_Port, R2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//#define RGB_G2(value)  HAL_GPIO_WritePin(G2_GPIO_Port, G2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//#define RGB_B2(value)  HAL_GPIO_WritePin(B2_GPIO_Port, B2_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-
-//#define RGB_A(value)   HAL_GPIO_WritePin(A_GPIO_Port, A_Pin, (value & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//#define RGB_B(value)   HAL_GPIO_WritePin(B_GPIO_Port, B_Pin, (value & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//#define RGB_C(value)   HAL_GPIO_WritePin(C_GPIO_Port, C_Pin, (value & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//#define RGB_D(value)   HAL_GPIO_WritePin(D_GPIO_Port, D_Pin, (value & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//
-//#define RGB_CLK(value) HAL_GPIO_WritePin(CLK_GPIO_Port, CLK_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//#define RGB_LAT(value) HAL_GPIO_WritePin(LAT_GPIO_Port, LAT_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-//#define RGB_OE(value)  HAL_GPIO_WritePin(OE_GPIO_Port, OE_Pin, (value) ? GPIO_PIN_SET : GPIO_PIN_RESET)
-
 #define RGB_GPIO_Port	R1_GPIO_Port
 #define ABCD_GPIO_Port	A_GPIO_Port
 
