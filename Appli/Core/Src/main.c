@@ -100,8 +100,10 @@ COM_InitTypeDef BspCOMInit;
 
 // Image Buffer
 uint8_t ImageBuffer[3*MATRIX_HEIGHT*MATRIX_WIDTH]; // 3 colors
+uint8_t DisplayBuffer[MATRIX_HEIGHT / 2][MATRIX_WIDTH][BCM_BITS][2];
 
 uint8_t *Image;
+uint32_t *Display;
 
 const uint8_t Font5x7[][5];
 
@@ -118,7 +120,9 @@ void DelayUs(uint32_t us);
 void HUB75_Init(void);
 void HUB75_SendRowData(void);
 void HUB75_SendRowData2(void);
-void SetRGBPins(uint8_t rgb_data1, uint8_t rgb_data2);
+void SetRGBPins(uint8_t  rgb_data1, uint8_t rgb_data2);
+
+void PrepareBuffer(void);
 
 void Paint_NewImage(uint8_t image[]);
 void DrawPixel(uint16_t Xpoint, uint16_t Ypoint, uint8_t R, uint8_t G, uint8_t B);
@@ -150,9 +154,6 @@ int main(void)
   /* Enable I-Cache---------------------------------------------------------*/
   SCB_EnableICache();
 
-  /* Enable D-Cache---------------------------------------------------------*/
-  SCB_EnableDCache();
-
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Update SystemCoreClock variable according to RCC registers values. */
@@ -177,8 +178,8 @@ int main(void)
   DWT_Init();
   HUB75_Init();
 
-  DrawPixel(63, 20, 255, 255, 255);
-  DrawPixel(0, 20, 255, 255, 255);
+//  DrawPixel(63, 20, 255, 255, 255);
+//  DrawPixel(0, 20, 255, 255, 255);
 //  DrawPixel(15, 21, 0, 255, 0);
 //  DrawPixel(15, 22, 0, 0, 255);
 //
@@ -202,28 +203,30 @@ int main(void)
 //	  if (oui % 2 == 0) {
 //		  DrawRectangle(oui, 0, oui, 31, 255, 255, 255);
 //	  } else {
-//		  DrawRectangle(oui, 0, oui, 31, 85, 85, 85);
+//		  DrawRectangle(oui, 0, oui, 31, 20, 20, 20);
 //	  }
 //  }
 
 //  DrawRectangle(0, 0, 63, 31, 255, 255, 255);
 
-//  DrawRectangle(10, 13, 14, 17, 255, 165, 0);
-//  DrawRectangle(15, 13, 19, 17, 120, 255, 10);
-//  DrawRectangle(20, 13, 24, 17, 255, 10, 100);
-//  DrawRectangle(25, 13, 29, 17, 10, 130, 120);
-//  DrawRectangle(30, 13, 34, 17, 255, 0, 0);
-//  DrawRectangle(35, 13, 39, 17, 0, 255, 0);
-//  DrawRectangle(40, 13, 44, 17, 0, 0, 255);
-//  DrawRectangle(45, 13, 49, 17, 255, 255, 255);
-//  DrawRectangle(50, 13, 54, 17, 50, 50, 50);
-//  DrawRectangle(55, 13, 59, 17, 1, 1, 1);
-
+  DrawRectangle(5, 21, 9, 25, 255, 100, 0);
+  DrawRectangle(10, 21, 14, 25, 255, 215, 0);
+  DrawRectangle(15, 21, 19, 25, 120, 255, 10);
+  DrawRectangle(20, 21, 24, 25, 255, 10, 100);
+  DrawRectangle(25, 21, 29, 25, 10, 130, 120);
+  DrawRectangle(30, 21, 34, 25, 255, 0, 0);
+  DrawRectangle(35, 21, 39, 25, 0, 255, 0);
+  DrawRectangle(40, 21, 44, 25, 0, 0, 255);
+  DrawRectangle(45, 21, 49, 25, 255, 255, 255);
+  DrawRectangle(50, 21, 54, 25, 50, 50, 50);
+  DrawRectangle(55, 21, 59, 25, 1, 1, 1);
+//
   DrawString(5, 1, "HELLO", 255, 0, 0);
   DrawString(5, 11, "WORLD", 0, 255, 0);
-  DrawString(5, 21, "ZIOMECZKI", 0, 0, 255);
-  DrawString(40, 1, "XD", 255, 255, 255);
-  DrawString(40, 11, "XD", 10, 10, 10);
+  DrawString(37, 1, "XD", 0, 0, 255);
+  DrawString(37, 11, "XD", 0, 0, 10);
+  DrawString(51, 1, "XD", 255, 255, 255);
+  DrawString(51, 11, "XD", 10, 10, 10);
 
 //  DrawRectangle(1, 1, 5, 5, 255, 255, 255);
 
@@ -232,7 +235,7 @@ int main(void)
 
 //  DrawRectangle(59, 27, 63, 31, 255, 255, 255);
 
-
+  PrepareBuffer();
 
   /* USER CODE END 2 */
 
@@ -339,33 +342,20 @@ void HUB75_SendRowData2(void) {
         RGB_C(row);
         RGB_D(row);
 
-        uint32_t row_upper_base = (MATRIX_HEIGHT - row) * MATRIX_WIDTH * 3;
-		uint32_t row_lower_base = (MATRIX_HEIGHT - (row + 16)) * MATRIX_WIDTH * 3;
-
         for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
 
             uint32_t delay_time = base_delay * (1 << bit);
+//            uint32_t delay_time = (1 << bit) / 10;
 
-            for (uint16_t col = 0, upper_offset = 0, lower_offset = 0; col < MATRIX_WIDTH; col++, upper_offset += 3, lower_offset += 3) {
+            for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
 
-            	uint8_t red1 = ImageBuffer[row_upper_base - upper_offset];
-				uint8_t green1 = ImageBuffer[row_upper_base - upper_offset + 1];
-				uint8_t blue1 = ImageBuffer[row_upper_base - upper_offset + 2];
-
-				uint8_t red2 = ImageBuffer[row_lower_base - lower_offset];
-				uint8_t green2 = ImageBuffer[row_lower_base - lower_offset + 1];
-				uint8_t blue2 = ImageBuffer[row_lower_base - lower_offset + 2];
-
-				uint32_t rgb_data1 = ((red1 >> bit) & 0x01) | ((green1 >> bit) & 0x01) << 1 | ((blue1 >> bit) & 0x01) << 2;
-				uint32_t rgb_data2 = ((red2 >> bit) & 0x01) | ((green2 >> bit) & 0x01) << 1 | ((blue2 >> bit) & 0x01) << 2;
-
-				SetRGBPins(rgb_data1, rgb_data2);
+				SetRGBPins(DisplayBuffer[row][col][bit][0], DisplayBuffer[row][col][bit][1]);
 
                 RGB_CLK(1);
                 RGB_CLK(0);
             }
 
-			SetRGBPins(0, 0);
+            SetRGBPins(0, 0);
 
             RGB_LAT(1);
             RGB_LAT(0);
@@ -377,8 +367,7 @@ void HUB75_SendRowData2(void) {
     }
 }
 
-void SetRGBPins(uint8_t rgb_data1, uint8_t rgb_data2) {
-    // Directly set/reset GPIOE pins for R1, G1, B1, R2
+void SetRGBPins(uint8_t rgb_data1, uint8_t  rgb_data2) {
 	RGB_GPIO_Port->ODR = (RGB_GPIO_Port->ODR & ~(R1_Pin | G1_Pin | B1_Pin | R2_Pin | G2_Pin | B2_Pin)) |
 	                 ((rgb_data1 & 0x01 ? R1_Pin : 0) |
 	                  (rgb_data1 & 0x02 ? G1_Pin : 0) |
@@ -386,6 +375,35 @@ void SetRGBPins(uint8_t rgb_data1, uint8_t rgb_data2) {
 	                  (rgb_data2 & 0x01 ? R2_Pin : 0) |
 	                  (rgb_data2 & 0x02 ? G2_Pin : 0) |
 	                  (rgb_data2 & 0x04 ? B2_Pin : 0));
+}
+
+void PrepareBuffer(void) {
+    for (uint16_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
+    	uint32_t row_upper_base = row * MATRIX_WIDTH * 3;
+    	uint32_t row_lower_base = (row + 16) * MATRIX_WIDTH * 3;
+
+        for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
+            for (uint16_t col = 0, upper_offset = 0, lower_offset = 0; col < MATRIX_WIDTH; col++, upper_offset += 3, lower_offset += 3) {
+
+                // Extract color components from the image buffer
+                uint8_t red1 = ImageBuffer[row_upper_base + upper_offset];
+                uint8_t green1 = ImageBuffer[row_upper_base + upper_offset + 1];
+                uint8_t blue1 = ImageBuffer[row_upper_base + upper_offset + 2];
+
+                uint8_t red2 = ImageBuffer[row_lower_base + lower_offset];
+                uint8_t green2 = ImageBuffer[row_lower_base + lower_offset + 1];
+                uint8_t blue2 = ImageBuffer[row_lower_base + lower_offset + 2];
+
+                // Create the RGB data for both upper and lower rows
+                uint8_t rgb_data1 = ((red1 >> bit) & 0x01) | ((green1 >> bit) & 0x01) << 1 | ((blue1 >> bit) & 0x01) << 2;
+                uint8_t rgb_data2 = ((red2 >> bit) & 0x01) | ((green2 >> bit) & 0x01) << 1 | ((blue2 >> bit) & 0x01) << 2;
+
+                // Store the result into the display buffer
+                DisplayBuffer[row][col][bit][0] = rgb_data1; // Upper half
+                DisplayBuffer[row][col][bit][1] = rgb_data2; // Lower half
+            }
+        }
+    }
 }
 
 void Paint_NewImage(uint8_t image[])
