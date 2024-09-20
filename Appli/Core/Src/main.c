@@ -37,7 +37,8 @@
 /* USER CODE BEGIN PD */
 
 // Matrix dimensions
-#define MATRIX_WIDTH  64
+#define PANEL_COUNT		2
+#define MATRIX_WIDTH  PANEL_COUNT*64
 #define MATRIX_HEIGHT 32
 
 // Color channel indices
@@ -46,6 +47,8 @@
 #define BLUE   2
 
 #define BCM_BITS 8
+#define scroll_speed 4
+
 
 /* USER CODE END PD */
 
@@ -111,6 +114,8 @@ void DrawPixel(uint16_t Xpoint, uint16_t Ypoint, uint8_t R, uint8_t G, uint8_t B
 void DrawRectangle(uint16_t x_start, uint16_t y_start, uint16_t x_end, uint16_t y_end, uint8_t R, uint8_t G, uint8_t B);
 void DrawChar(uint16_t x, uint16_t y, char c, uint8_t R, uint8_t G, uint8_t B);
 void DrawString(uint16_t x, uint16_t y, const char *str, uint8_t R, uint8_t G, uint8_t B);
+void ScrollHorizontal(int direction);
+void ScrollVertical(int direction);
 
 /* USER CODE END PFP */
 
@@ -168,7 +173,9 @@ int main(void)
 //	  }
 //  }
 
-//  DrawRectangle(0, 0, 63, 31, 255, 255, 255);
+//  DrawRectangle(64, 0, 127, 31, 255, 255, 255);
+
+  DrawRectangle(64, 14, 127, 17, 255, 255, 255);
 
   DrawRectangle(5, 21, 9, 25, 255, 100, 0);
   DrawRectangle(10, 21, 14, 25, 255, 215, 0);
@@ -218,7 +225,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+//	  ScrollVertical(0);
+	  ScrollHorizontal(1);
 	  HUB75_SendRowData(); // Refresh display
+	  HAL_Delay(scroll_speed);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -370,6 +380,85 @@ void DrawString(uint16_t x, uint16_t y, const char *str, uint8_t R, uint8_t G, u
         x += 6;  // Move to the right by 6 pixels (5 for the character, 1 for spacing)
         str++;   // Move to the next character
     }
+}
+
+
+void ScrollHorizontal(int direction) {
+    // Shift left if direction is negative, shift right if direction is positive
+    for (uint16_t row = 0; row < MATRIX_HEIGHT; row++) {
+        if (direction > 0) {  // Scroll right
+            // Store the last pixel's RGB values for the row
+            uint8_t lastPixelR = ImageBuffer[(row * MATRIX_WIDTH * 3) + (MATRIX_WIDTH - 1) * 3];
+            uint8_t lastPixelG = ImageBuffer[(row * MATRIX_WIDTH * 3) + (MATRIX_WIDTH - 1) * 3 + 1];
+            uint8_t lastPixelB = ImageBuffer[(row * MATRIX_WIDTH * 3) + (MATRIX_WIDTH - 1) * 3 + 2];
+
+            // Shift all pixels to the right
+            for (uint16_t col = MATRIX_WIDTH - 1; col > 0; col--) {
+                ImageBuffer[(row * MATRIX_WIDTH * 3) + col * 3] = ImageBuffer[(row * MATRIX_WIDTH * 3) + (col - 1) * 3];
+                ImageBuffer[(row * MATRIX_WIDTH * 3) + col * 3 + 1] = ImageBuffer[(row * MATRIX_WIDTH * 3) + (col - 1) * 3 + 1];
+                ImageBuffer[(row * MATRIX_WIDTH * 3) + col * 3 + 2] = ImageBuffer[(row * MATRIX_WIDTH * 3) + (col - 1) * 3 + 2];
+            }
+
+            // Move the last pixel to the first column (wraparound)
+            ImageBuffer[(row * MATRIX_WIDTH * 3)] = lastPixelR;
+            ImageBuffer[(row * MATRIX_WIDTH * 3) + 1] = lastPixelG;
+            ImageBuffer[(row * MATRIX_WIDTH * 3) + 2] = lastPixelB;
+        }
+        else if (direction < 0) {  // Scroll left
+            // Store the first pixel's RGB values
+            uint8_t firstPixelR = ImageBuffer[(row * MATRIX_WIDTH * 3)];
+            uint8_t firstPixelG = ImageBuffer[(row * MATRIX_WIDTH * 3) + 1];
+            uint8_t firstPixelB = ImageBuffer[(row * MATRIX_WIDTH * 3) + 2];
+
+            // Shift all pixels to the left
+            for (uint16_t col = 0; col < MATRIX_WIDTH - 1; col++) {
+                ImageBuffer[(row * MATRIX_WIDTH * 3) + col * 3] = ImageBuffer[(row * MATRIX_WIDTH * 3) + (col + 1) * 3];
+                ImageBuffer[(row * MATRIX_WIDTH * 3) + col * 3 + 1] = ImageBuffer[(row * MATRIX_WIDTH * 3) + (col + 1) * 3 + 1];
+                ImageBuffer[(row * MATRIX_WIDTH * 3) + col * 3 + 2] = ImageBuffer[(row * MATRIX_WIDTH * 3) + (col + 1) * 3 + 2];
+            }
+
+            // Move the first pixel to the last column (wraparound)
+            ImageBuffer[(row * MATRIX_WIDTH * 3) + (MATRIX_WIDTH - 1) * 3] = firstPixelR;
+            ImageBuffer[(row * MATRIX_WIDTH * 3) + (MATRIX_WIDTH - 1) * 3 + 1] = firstPixelG;
+            ImageBuffer[(row * MATRIX_WIDTH * 3) + (MATRIX_WIDTH - 1) * 3 + 2] = firstPixelB;
+        }
+    }
+
+    // After scrolling, update the display buffer
+    PrepareBuffer();
+}
+
+
+void ScrollVertical(int direction) {
+    if (direction == 1) { // Down
+        uint8_t temp[MATRIX_WIDTH * 3]; // Store the last row for wrapping
+
+        // Store last row
+        memcpy(temp, &ImageBuffer[(MATRIX_HEIGHT - 1) * MATRIX_WIDTH * 3], MATRIX_WIDTH * 3);
+
+        // Shift all rows down
+        for (int y = MATRIX_HEIGHT - 1; y > 0; y--) {
+            memcpy(&ImageBuffer[y * MATRIX_WIDTH * 3], &ImageBuffer[(y - 1) * MATRIX_WIDTH * 3], MATRIX_WIDTH * 3);
+        }
+
+        // Wrap the stored last row to the first
+        memcpy(&ImageBuffer[0], temp, MATRIX_WIDTH * 3);
+    } else { // Up
+        uint8_t temp[MATRIX_WIDTH * 3]; // Store the first row for wrapping
+
+        // Store first row
+        memcpy(temp, &ImageBuffer[0], MATRIX_WIDTH * 3);
+
+        // Shift all rows up
+        for (int y = 0; y < MATRIX_HEIGHT - 1; y++) {
+            memcpy(&ImageBuffer[y * MATRIX_WIDTH * 3], &ImageBuffer[(y + 1) * MATRIX_WIDTH * 3], MATRIX_WIDTH * 3);
+        }
+
+        // Wrap the stored first row to the last
+        memcpy(&ImageBuffer[(MATRIX_HEIGHT - 1) * MATRIX_WIDTH * 3], temp, MATRIX_WIDTH * 3);
+    }
+
+    PrepareBuffer(); // Rebuild the display buffer with the new image data
 }
 
 
