@@ -36,10 +36,12 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-// Matrix dimensions
-#define PANEL_COUNT		2
-#define MATRIX_WIDTH  PANEL_COUNT*64
-#define MATRIX_HEIGHT 32
+// Matrix config
+#define PANEL_COUNT		1
+#define MATRIX_WIDTH  (PANEL_COUNT * 32)
+#define MATRIX_HEIGHT 16
+#define SCAN_RATE 8  // scanning lines 1/SCAN_RATE
+
 
 // Color channel indices
 #define RED    0
@@ -47,8 +49,8 @@
 #define BLUE   2
 
 #define BCM_BITS 8
-#define scroll_speed 4
-
+#define scroll_speed 6
+#define BASE_DELAY 1
 
 /* USER CODE END PD */
 
@@ -85,15 +87,13 @@ COM_InitTypeDef BspCOMInit;
 /* USER CODE BEGIN PV */
 
 // Image Buffer
-uint8_t ImageBuffer[3*MATRIX_HEIGHT*MATRIX_WIDTH]; // 3 colors
+uint8_t ImageBuffer[3 * MATRIX_HEIGHT * MATRIX_WIDTH]; // 3 colors
 uint8_t DisplayBuffer[MATRIX_HEIGHT / 2][MATRIX_WIDTH][BCM_BITS][2];
 
 uint8_t *Image;
 uint32_t *Display;
 
 const uint8_t Font5x7[][5];
-
-uint16_t base_delay = 5;
 
 /* USER CODE END PV */
 
@@ -165,38 +165,51 @@ int main(void)
   DWT_Init();
   HUB75_Init();
 
-//  for (uint16_t oui = 0; oui < 64; oui++) {
-//	  if (oui % 2 == 0) {
-//		  DrawRectangle(oui, 0, oui, 31, 255, 255, 255);
-//	  } else {
-//		  DrawRectangle(oui, 0, oui, 31, 20, 20, 20);
+//  for (uint16_t oui = 0; oui < MATRIX_WIDTH; oui++) {
+//	  for (uint16_t iou = 0; iou < MATRIX_HEIGHT; iou+=3) {
+//		  if (oui % 2 == 0) {
+//			  DrawRectangle(oui, iou, oui, iou, 255, 0, 0);
+//			  DrawRectangle(oui, iou + 1, oui, iou + 1, 0, 255, 0);
+//			  DrawRectangle(oui, iou + 2, oui, iou + 2, 0, 0, 255);
+//		  } else {
+//			  DrawRectangle(oui, iou, oui, iou, 10, 0, 0);
+//			  DrawRectangle(oui, iou + 1, oui, iou + 1, 0, 10, 0);
+//			  DrawRectangle(oui, iou + 2, oui, iou + 2, 0, 0, 10);
+//		  }
 //	  }
 //  }
 
+//  DrawRectangle(0, 0, 127, 31, 200, 200, 200);
 //  DrawRectangle(64, 0, 127, 31, 255, 255, 255);
 
-  DrawRectangle(64, 14, 127, 17, 255, 255, 255);
-
-  DrawRectangle(5, 21, 9, 25, 255, 100, 0);
-  DrawRectangle(10, 21, 14, 25, 255, 215, 0);
-  DrawRectangle(15, 21, 19, 25, 120, 255, 10);
-  DrawRectangle(20, 21, 24, 25, 255, 10, 100);
-  DrawRectangle(25, 21, 29, 25, 10, 130, 120);
-  DrawRectangle(30, 21, 34, 25, 255, 0, 0);
-  DrawRectangle(35, 21, 39, 25, 0, 255, 0);
-  DrawRectangle(40, 21, 44, 25, 0, 0, 255);
-  DrawRectangle(45, 21, 49, 25, 255, 255, 255);
-  DrawRectangle(50, 21, 54, 25, 50, 50, 50);
-  DrawRectangle(55, 21, 59, 25, 1, 1, 1);
-
-  DrawString(5, 1, "HELLO", 255, 0, 0);
-  DrawString(5, 11, "WORLD", 0, 255, 0);
-  DrawString(37, 1, "XD", 0, 0, 255);
-  DrawString(37, 11, "XD", 0, 0, 10);
-  DrawString(51, 1, "XD", 255, 255, 255);
-  DrawString(51, 11, "XD", 10, 10, 10);
+//  DrawRectangle(64, 14, 127, 17, 255, 255, 255);
+//
+//  DrawRectangle(5, 21, 9, 25, 255, 100, 0);
+//  DrawRectangle(10, 21, 14, 25, 255, 215, 0);
+//  DrawRectangle(15, 21, 19, 25, 120, 255, 10);
+//  DrawRectangle(20, 21, 24, 25, 255, 10, 100);
+//  DrawRectangle(25, 21, 29, 25, 10, 130, 120);
+//  DrawRectangle(30, 21, 34, 25, 255, 0, 0);
+//  DrawRectangle(35, 21, 39, 25, 0, 255, 0);
+//  DrawRectangle(40, 21, 44, 25, 0, 0, 255);
+//  DrawRectangle(45, 21, 49, 25, 255, 255, 255);
+//  DrawRectangle(50, 21, 54, 25, 50, 50, 50);
+//  DrawRectangle(55, 21, 59, 25, 1, 1, 1);
+//
+//  DrawString(5, 1, "HELLO", 255, 0, 0);
+//  DrawString(5, 11, "WORLD", 0, 255, 0);
+//  DrawString(37, 1, "XD", 0, 0, 255);
+//  DrawString(37, 11, "XD", 0, 0, 10);
+//  DrawString(51, 1, "XD", 255, 255, 255);
+//  DrawString(51, 11, "XD", 10, 10, 10);
 
   //  DrawString(5, 11, "JAZDA!!!!", 50, 50, 50);
+
+  DrawRectangle(0, 2, 31, 2, 255, 255, 255);
+
+  DrawPixel(10, 10, 255, 255, 255);
+
+  DrawString(14, 5, "XD", 100, 100, 100);
 
   PrepareBuffer();
 
@@ -226,9 +239,10 @@ int main(void)
   while (1)
   {
 //	  ScrollVertical(0);
-	  ScrollHorizontal(1);
+//	  ScrollHorizontal(1);
 	  HUB75_SendRowData(); // Refresh display
-	  HAL_Delay(scroll_speed);
+	  DelayUs(100);
+//	  HAL_Delay(scroll_speed);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -253,11 +267,11 @@ void HUB75_SendRowData(void) {
         RGB_A(row);
         RGB_B(row);
         RGB_C(row);
-        RGB_D(row);
+//		RGB_D(row);
 
         for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
 
-            uint32_t delay_time = base_delay * (1 << bit);
+            uint32_t delay_time = BASE_DELAY * (1 << bit);
 
             for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
 
@@ -292,7 +306,7 @@ void SetRGBPins(uint8_t rgb_data1, uint8_t  rgb_data2) {
 void PrepareBuffer(void) {
     for (uint16_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
     	uint32_t row_upper_base = row * MATRIX_WIDTH * 3;
-    	uint32_t row_lower_base = (row + 16) * MATRIX_WIDTH * 3;
+    	uint32_t row_lower_base = (row + SCAN_RATE) * MATRIX_WIDTH * 3;
 
         for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
             for (uint16_t col = 0, upper_offset = 0, lower_offset = 0; col < MATRIX_WIDTH; col++, upper_offset += 3, lower_offset += 3) {
