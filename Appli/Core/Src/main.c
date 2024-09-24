@@ -37,11 +37,10 @@
 /* USER CODE BEGIN PD */
 
 // Matrix config
-#define PANEL_COUNT		1
+#define PANEL_COUNT		4
 #define MATRIX_WIDTH  (PANEL_COUNT * 32)
-#define MATRIX_HEIGHT 16
-#define SCAN_RATE 8  // scanning lines 1/SCAN_RATE
-
+#define MATRIX_HEIGHT 32
+#define SCAN_RATE 16  // scanning lines 1/SCAN_RATE
 
 // Color channel indices
 #define RED    0
@@ -165,51 +164,54 @@ int main(void)
   DWT_Init();
   HUB75_Init();
 
-//  for (uint16_t oui = 0; oui < MATRIX_WIDTH; oui++) {
-//	  for (uint16_t iou = 0; iou < MATRIX_HEIGHT; iou+=3) {
-//		  if (oui % 2 == 0) {
-//			  DrawRectangle(oui, iou, oui, iou, 255, 0, 0);
-//			  DrawRectangle(oui, iou + 1, oui, iou + 1, 0, 255, 0);
-//			  DrawRectangle(oui, iou + 2, oui, iou + 2, 0, 0, 255);
-//		  } else {
-//			  DrawRectangle(oui, iou, oui, iou, 10, 0, 0);
-//			  DrawRectangle(oui, iou + 1, oui, iou + 1, 0, 10, 0);
-//			  DrawRectangle(oui, iou + 2, oui, iou + 2, 0, 0, 10);
-//		  }
-//	  }
-//  }
+  for (uint16_t oui = 64; oui < MATRIX_WIDTH; oui++) {
+	  for (uint16_t iou = 0; iou < MATRIX_HEIGHT; iou+=3) {
+		  if (oui % 2 == 0) {
+			  DrawRectangle(oui, iou, oui, iou, 255, 0, 0);
+			  DrawRectangle(oui, iou + 1, oui, iou + 1, 0, 255, 0);
+			  DrawRectangle(oui, iou + 2, oui, iou + 2, 0, 0, 255);
+		  } else {
+			  DrawRectangle(oui, iou, oui, iou, 10, 0, 0);
+			  DrawRectangle(oui, iou + 1, oui, iou + 1, 0, 10, 0);
+			  DrawRectangle(oui, iou + 2, oui, iou + 2, 0, 0, 10);
+		  }
+	  }
+  }
 
 //  DrawRectangle(0, 0, 127, 31, 200, 200, 200);
 //  DrawRectangle(64, 0, 127, 31, 255, 255, 255);
 
 //  DrawRectangle(64, 14, 127, 17, 255, 255, 255);
 //
-//  DrawRectangle(5, 21, 9, 25, 255, 100, 0);
-//  DrawRectangle(10, 21, 14, 25, 255, 215, 0);
-//  DrawRectangle(15, 21, 19, 25, 120, 255, 10);
-//  DrawRectangle(20, 21, 24, 25, 255, 10, 100);
-//  DrawRectangle(25, 21, 29, 25, 10, 130, 120);
-//  DrawRectangle(30, 21, 34, 25, 255, 0, 0);
-//  DrawRectangle(35, 21, 39, 25, 0, 255, 0);
-//  DrawRectangle(40, 21, 44, 25, 0, 0, 255);
-//  DrawRectangle(45, 21, 49, 25, 255, 255, 255);
-//  DrawRectangle(50, 21, 54, 25, 50, 50, 50);
-//  DrawRectangle(55, 21, 59, 25, 1, 1, 1);
-//
-//  DrawString(5, 1, "HELLO", 255, 0, 0);
-//  DrawString(5, 11, "WORLD", 0, 255, 0);
-//  DrawString(37, 1, "XD", 0, 0, 255);
-//  DrawString(37, 11, "XD", 0, 0, 10);
-//  DrawString(51, 1, "XD", 255, 255, 255);
-//  DrawString(51, 11, "XD", 10, 10, 10);
+  DrawRectangle(5, 21, 9, 25, 255, 100, 0);
+  DrawRectangle(10, 21, 14, 25, 255, 215, 0);
+  DrawRectangle(15, 21, 19, 25, 120, 255, 10);
+  DrawRectangle(20, 21, 24, 25, 255, 10, 100);
+  DrawRectangle(25, 21, 29, 25, 10, 130, 120);
+  DrawRectangle(30, 21, 34, 25, 255, 0, 0);
+  DrawRectangle(35, 21, 39, 25, 0, 255, 0);
+  DrawRectangle(40, 21, 44, 25, 0, 0, 255);
+  DrawRectangle(45, 21, 49, 25, 255, 255, 255);
+  DrawRectangle(50, 21, 54, 25, 50, 50, 50);
+  DrawRectangle(55, 21, 59, 25, 1, 1, 1);
+
+  DrawString(5, 1, "HELLO", 255, 0, 0);
+  DrawString(5, 11, "WORLD", 0, 255, 0);
+  DrawString(37, 1, "XD", 0, 0, 255);
+  DrawString(37, 11, "XD", 0, 0, 10);
+  DrawString(51, 1, "XD", 255, 255, 255);
+  DrawString(51, 11, "XD", 10, 10, 10);
 
   //  DrawString(5, 11, "JAZDA!!!!", 50, 50, 50);
 
-  DrawRectangle(0, 2, 31, 2, 255, 255, 255);
-
-  DrawPixel(10, 10, 255, 255, 255);
-
-  DrawString(14, 5, "XD", 100, 100, 100);
+//  DrawRectangle(0, 1, 31, 1, 255, 255, 255);
+//  DrawRectangle(0, 3, 31, 3, 255, 0, 0);
+//  DrawRectangle(0, 5, 31, 5, 0, 255, 0);
+//  DrawRectangle(0, 7, 31, 7, 0, 0, 255);
+//
+//  DrawString(1, 9, "X", 255, 255, 255);
+//  DrawString(9, 9, "X", 100, 100, 100);
+//  DrawString(17, 9, "X", 1, 1, 1);
 
   PrepareBuffer();
 
@@ -267,7 +269,9 @@ void HUB75_SendRowData(void) {
         RGB_A(row);
         RGB_B(row);
         RGB_C(row);
-//		RGB_D(row);
+        if (SCAN_RATE > 8) {
+        	RGB_D(row);
+        }
 
         for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
 
