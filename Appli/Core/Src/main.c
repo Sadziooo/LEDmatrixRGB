@@ -179,10 +179,11 @@ int main(void)
   }
 
 //  DrawRectangle(0, 0, 127, 31, 200, 200, 200);
+
 //  DrawRectangle(64, 0, 127, 31, 255, 255, 255);
 
 //  DrawRectangle(64, 14, 127, 17, 255, 255, 255);
-//
+
   DrawRectangle(5, 21, 9, 25, 255, 100, 0);
   DrawRectangle(10, 21, 14, 25, 255, 215, 0);
   DrawRectangle(15, 21, 19, 25, 120, 255, 10);
