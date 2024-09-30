@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "gpdma.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -37,7 +38,7 @@
 /* USER CODE BEGIN PD */
 
 // Matrix config
-#define PANEL_COUNT		4
+#define PANEL_COUNT		2
 #define MATRIX_WIDTH  (PANEL_COUNT * 32)
 #define MATRIX_HEIGHT 32
 #define SCAN_RATE 16  // scanning lines 1/SCAN_RATE
@@ -88,6 +89,7 @@ COM_InitTypeDef BspCOMInit;
 // Image Buffer
 uint8_t ImageBuffer[3 * MATRIX_HEIGHT * MATRIX_WIDTH]; // 3 colors
 uint8_t DisplayBuffer[MATRIX_HEIGHT / 2][MATRIX_WIDTH][BCM_BITS][2];
+uint16_t rgbDataBuffer[(MATRIX_HEIGHT / 2) * MATRIX_WIDTH * BCM_BITS];
 
 uint8_t *Image;
 uint32_t *Display;
@@ -107,6 +109,7 @@ void HUB75_SendRowData(void);
 void SetRGBPins(uint8_t  rgb_data1, uint8_t rgb_data2);
 
 void PrepareBuffer(void);
+void PrepareBuffForDMA(uint8_t *InputDataBuffer, uint16_t *OutputDataBuffer);
 
 void Paint_NewImage(uint8_t image[]);
 void DrawPixel(uint16_t Xpoint, uint16_t Ypoint, uint8_t R, uint8_t G, uint8_t B);
@@ -159,22 +162,31 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   DWT_Init();
   HUB75_Init();
 
-  for (uint16_t oui = 64; oui < MATRIX_WIDTH; oui++) {
-	  for (uint16_t iou = 0; iou < MATRIX_HEIGHT; iou+=3) {
-		  if (oui % 2 == 0) {
-			  DrawRectangle(oui, iou, oui, iou, 255, 0, 0);
-			  DrawRectangle(oui, iou + 1, oui, iou + 1, 0, 255, 0);
-			  DrawRectangle(oui, iou + 2, oui, iou + 2, 0, 0, 255);
-		  } else {
-			  DrawRectangle(oui, iou, oui, iou, 10, 0, 0);
-			  DrawRectangle(oui, iou + 1, oui, iou + 1, 0, 10, 0);
-			  DrawRectangle(oui, iou + 2, oui, iou + 2, 0, 0, 10);
-		  }
+//  for (uint16_t oui = 0; oui < MATRIX_WIDTH; oui++) {
+//	  for (uint16_t iou = 0; iou < MATRIX_HEIGHT; iou+=3) {
+//		  if (oui % 2 == 0) {
+//			  DrawRectangle(oui, iou, oui, iou, 255, 0, 0);
+//			  DrawRectangle(oui, iou + 1, oui, iou + 1, 0, 255, 0);
+//			  DrawRectangle(oui, iou + 2, oui, iou + 2, 0, 0, 255);
+//		  } else {
+//			  DrawRectangle(oui, iou, oui, iou, 10, 0, 0);
+//			  DrawRectangle(oui, iou + 1, oui, iou + 1, 0, 10, 0);
+//			  DrawRectangle(oui, iou + 2, oui, iou + 2, 0, 0, 10);
+//		  }
+//	  }
+//  }
+
+  for (uint16_t oui = 0; oui < MATRIX_WIDTH; oui++) {
+	  if (oui % 2 == 0) {
+		  DrawRectangle(oui, 0, oui, MATRIX_HEIGHT - 1, 255, 255, 255);
+	  } else {
+		  DrawRectangle(oui, 0, oui, MATRIX_HEIGHT - 1, 128, 128, 128);
 	  }
   }
 
@@ -184,24 +196,24 @@ int main(void)
 
 //  DrawRectangle(64, 14, 127, 17, 255, 255, 255);
 
-  DrawRectangle(5, 21, 9, 25, 255, 100, 0);
-  DrawRectangle(10, 21, 14, 25, 255, 215, 0);
-  DrawRectangle(15, 21, 19, 25, 120, 255, 10);
-  DrawRectangle(20, 21, 24, 25, 255, 10, 100);
-  DrawRectangle(25, 21, 29, 25, 10, 130, 120);
-  DrawRectangle(30, 21, 34, 25, 255, 0, 0);
-  DrawRectangle(35, 21, 39, 25, 0, 255, 0);
-  DrawRectangle(40, 21, 44, 25, 0, 0, 255);
-  DrawRectangle(45, 21, 49, 25, 255, 255, 255);
-  DrawRectangle(50, 21, 54, 25, 50, 50, 50);
-  DrawRectangle(55, 21, 59, 25, 1, 1, 1);
-
-  DrawString(5, 1, "HELLO", 255, 0, 0);
-  DrawString(5, 11, "WORLD", 0, 255, 0);
-  DrawString(37, 1, "XD", 0, 0, 255);
-  DrawString(37, 11, "XD", 0, 0, 10);
-  DrawString(51, 1, "XD", 255, 255, 255);
-  DrawString(51, 11, "XD", 10, 10, 10);
+//  DrawRectangle(5, 21, 9, 25, 255, 100, 0);
+//  DrawRectangle(10, 21, 14, 25, 255, 215, 0);
+//  DrawRectangle(15, 21, 19, 25, 120, 255, 10);
+//  DrawRectangle(20, 21, 24, 25, 255, 10, 100);
+//  DrawRectangle(25, 21, 29, 25, 10, 130, 120);
+//  DrawRectangle(30, 21, 34, 25, 255, 0, 0);
+//  DrawRectangle(35, 21, 39, 25, 0, 255, 0);
+//  DrawRectangle(40, 21, 44, 25, 0, 0, 255);
+//  DrawRectangle(45, 21, 49, 25, 255, 255, 255);
+//  DrawRectangle(50, 21, 54, 25, 50, 50, 50);
+//  DrawRectangle(55, 21, 59, 25, 1, 1, 1);
+//
+//  DrawString(5, 1, "HELLO", 255, 0, 0);
+//  DrawString(5, 11, "WORLD", 0, 255, 0);
+//  DrawString(37, 1, "XD", 0, 0, 255);
+//  DrawString(37, 11, "XD", 0, 0, 10);
+//  DrawString(51, 1, "XD", 255, 255, 255);
+//  DrawString(51, 11, "XD", 10, 10, 10);
 
   //  DrawString(5, 11, "JAZDA!!!!", 50, 50, 50);
 
@@ -215,6 +227,7 @@ int main(void)
 //  DrawString(17, 9, "X", 1, 1, 1);
 
   PrepareBuffer();
+  PrepareBuffForDMA(ImageBuffer, rgbDataBuffer);
 
   /* USER CODE END 2 */
 
@@ -336,6 +349,40 @@ void PrepareBuffer(void) {
         }
     }
 }
+
+
+void PrepareBuffForDMA(uint8_t *InputDataBuffer, uint16_t *OutputDataBuffer) {
+	for (uint8_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
+		for (uint8_t bit = 0; bit < BCM_BITS; bit++) {
+			for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
+				// Get the index of the first row pixel (R1G1B1)
+				uint32_t pixelIndex1 = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - (row * 2) - 1) * MATRIX_WIDTH);
+				uint8_t R1 = InputDataBuffer[pixelIndex1 * 3];      // Red channel for the first row
+				uint8_t G1 = InputDataBuffer[pixelIndex1 * 3 + 1];  // Green channel for the first row
+				uint8_t B1 = InputDataBuffer[pixelIndex1 * 3 + 2];  // Blue channel for the first row
+
+				// Get the index of the second row pixel (R2G2B2)
+				uint32_t pixelIndex2 = (MATRIX_WIDTH - col - 1) + ((MATRIX_HEIGHT - (row * 2 + 1) - 1) * MATRIX_WIDTH);
+				uint8_t R2 = InputDataBuffer[pixelIndex2 * 3];      // Red channel for the second row
+				uint8_t G2 = InputDataBuffer[pixelIndex2 * 3 + 1];  // Green channel for the second row
+				uint8_t B2 = InputDataBuffer[pixelIndex2 * 3 + 2];  // Blue channel for the second row
+
+				// Extract the bit-plane data (shift right by 'bit' and extract the LSB)
+				uint16_t rowData =
+							((R1 >> bit) & 0x01) << 8  |  // R1 -> PE8
+							((G1 >> bit) & 0x01) << 9  |  // G1 -> PE9
+							((B1 >> bit) & 0x01) << 10 |  // B1 -> PE10
+							((R2 >> bit) & 0x01) << 11 |  // R2 -> PE11
+							((G2 >> bit) & 0x01) << 12 |  // G2 -> PE12
+							((B2 >> bit) & 0x01) << 13;   // B2 -> PE13
+
+				// Store the row data for the current bit-plane
+				OutputDataBuffer[bit * MATRIX_WIDTH + col] = rowData;
+			}
+		}
+	}
+}
+
 
 void Paint_NewImage(uint8_t image[])
 {

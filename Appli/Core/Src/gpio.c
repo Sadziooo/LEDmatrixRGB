@@ -33,6 +33,7 @@
 /* USER CODE END 1 */
 
 /** Configure pins
+     PB0   ------> S_TIM3_CH3
 */
 void MX_GPIO_Init(void)
 {
@@ -43,13 +44,14 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOP_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOF, CLK_Pin|LAT_Pin|OE_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, B2_Pin|R1_Pin|B1_Pin|R2_Pin
-                          |G1_Pin|G2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, B2_Pin|R2_Pin|G2_Pin|G1_Pin
+                          |R1_Pin|B1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOP, C_Pin|D_Pin|A_Pin|B_Pin, GPIO_PIN_RESET);
@@ -63,8 +65,8 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PEPin PEPin PEPin PEPin
                            PEPin PEPin */
-  GPIO_InitStruct.Pin = B2_Pin|R1_Pin|B1_Pin|R2_Pin
-                          |G1_Pin|G2_Pin;
+  GPIO_InitStruct.Pin = B2_Pin|R2_Pin|G2_Pin|G1_Pin
+                          |R1_Pin|B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -76,6 +78,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOP, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PB0 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 

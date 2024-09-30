@@ -63,28 +63,28 @@ void Error_Handler(void);
 #define CLK_GPIO_Port GPIOF
 #define LAT_Pin GPIO_PIN_4
 #define LAT_GPIO_Port GPIOF
-#define B2_Pin GPIO_PIN_11
+#define B2_Pin GPIO_PIN_13
 #define B2_GPIO_Port GPIOE
-#define R1_Pin GPIO_PIN_6
-#define R1_GPIO_Port GPIOE
+#define R2_Pin GPIO_PIN_11
+#define R2_GPIO_Port GPIOE
+#define G2_Pin GPIO_PIN_12
+#define G2_GPIO_Port GPIOE
 #define OE_Pin GPIO_PIN_5
 #define OE_GPIO_Port GPIOF
-#define B1_Pin GPIO_PIN_7
-#define B1_GPIO_Port GPIOE
 #define C_Pin GPIO_PIN_2
 #define C_GPIO_Port GPIOP
 #define D_Pin GPIO_PIN_3
 #define D_GPIO_Port GPIOP
 #define A_Pin GPIO_PIN_0
 #define A_GPIO_Port GPIOP
-#define R2_Pin GPIO_PIN_9
-#define R2_GPIO_Port GPIOE
+#define G1_Pin GPIO_PIN_9
+#define G1_GPIO_Port GPIOE
 #define B_Pin GPIO_PIN_1
 #define B_GPIO_Port GPIOP
-#define G1_Pin GPIO_PIN_8
-#define G1_GPIO_Port GPIOE
-#define G2_Pin GPIO_PIN_10
-#define G2_GPIO_Port GPIOE
+#define R1_Pin GPIO_PIN_8
+#define R1_GPIO_Port GPIOE
+#define B1_Pin GPIO_PIN_10
+#define B1_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
 
