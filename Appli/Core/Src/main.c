@@ -96,6 +96,13 @@ uint32_t *Display;
 
 const uint8_t Font5x7[][5];
 
+
+volatile uint8_t dma_flag = 0;
+volatile uint8_t DMA_STATE = 0;
+uint16_t testBuffer[4] = {0x0100, 0x0200, 0x0300, 0x0400};
+
+extern DMA_HandleTypeDef handle_GPDMA1_Channel0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -118,6 +125,8 @@ void DrawChar(uint16_t x, uint16_t y, char c, uint8_t R, uint8_t G, uint8_t B);
 void DrawString(uint16_t x, uint16_t y, const char *str, uint8_t R, uint8_t G, uint8_t B);
 void ScrollHorizontal(int direction);
 void ScrollVertical(int direction);
+
+void HAL_DMA_XferCpltCallback(DMA_HandleTypeDef *hdma);
 
 /* USER CODE END PFP */
 
@@ -162,11 +171,14 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_GPDMA1_Init();
-  MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-
   DWT_Init();
   HUB75_Init();
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+  HAL_DMA_RegisterCallback(&handle_GPDMA1_Channel0,HAL_DMA_XFER_CPLT_CB_ID, HAL_DMA_XferCpltCallback);
+
+//  DrawRectangle(0, 0, 63, 31, 255, 255, 255);
 
 //  for (uint16_t oui = 0; oui < MATRIX_WIDTH; oui++) {
 //	  for (uint16_t iou = 0; iou < MATRIX_HEIGHT; iou+=3) {
@@ -256,8 +268,16 @@ int main(void)
   {
 //	  ScrollVertical(0);
 //	  ScrollHorizontal(1);
+//	  DMA_STATE = HAL_DMA_GetState(&handle_GPDMA1_Channel0);
+//
+//	  if(DMA_STATE == HAL_DMA_STATE_READY) {
+//		  HAL_DMA_Start_IT(&handle_GPDMA1_Channel0, (uint32_t)&testBuffer, (uint32_t)&GPIOE->ODR, sizeof(testBuffer));
+//	  }
+
+//	  HAL_Delay(500);
+//	  HAL_GPIO_TogglePin(LD3_GPIO_PORT, LD3_PIN);
+
 	  HUB75_SendRowData(); // Refresh display
-	  DelayUs(100);
 //	  HAL_Delay(scroll_speed);
     /* USER CODE END WHILE */
 
@@ -277,6 +297,7 @@ void HUB75_Init(void) {
     Paint_NewImage(ImageBuffer);
 }
 
+
 void HUB75_SendRowData(void) {
     for (uint16_t row = 0; row < MATRIX_HEIGHT / 2; row++) {
 
@@ -291,15 +312,17 @@ void HUB75_SendRowData(void) {
 
             uint32_t delay_time = BASE_DELAY * (1 << bit);
 
-            for (uint16_t col = 0; col < MATRIX_WIDTH; col++) {
+//            uint32_t sourceAddress = (uint32_t)&rgbDataBuffer[bit * MATRIX_WIDTH];
+            DMA_STATE = HAL_DMA_GetState(&handle_GPDMA1_Channel0);
+//			 Start DMA transfer for this bit-plane and row
+			HAL_DMA_Start_IT(&handle_GPDMA1_Channel0, (uint32_t)&rgbDataBuffer, (uint32_t)&GPIOE->ODR, 1024);
 
-				SetRGBPins(DisplayBuffer[row][col][bit][0], DisplayBuffer[row][col][bit][1]);
+			while (dma_flag != 1) {
+				DMA_STATE = HAL_DMA_GetState(&handle_GPDMA1_Channel0);
+				__NOP();
+			}
 
-                RGB_CLK(1);
-                RGB_CLK(0);
-            }
-
-            SetRGBPins(0, 0);
+			dma_flag = 0;
 
             RGB_LAT(1);
             RGB_LAT(0);
@@ -307,8 +330,14 @@ void HUB75_SendRowData(void) {
             RGB_OE(0);
             DelayUs(delay_time);
             RGB_OE(1);
+
+//            SetRGBPins(0, 0);
         }
     }
+}
+
+void HAL_DMA_XferCpltCallback(DMA_HandleTypeDef *hdma) {
+	dma_flag = 1;
 }
 
 void SetRGBPins(uint8_t rgb_data1, uint8_t  rgb_data2) {
@@ -840,6 +869,12 @@ void DelayUs(uint32_t us) {
 
     while ((DWT->CYCCNT - startTick) < usTicks);
 }
+
+//void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+//	if (htim->Instance == TIM3) {
+//		__NOP();
+//	}
+//}
 
 /* USER CODE END 4 */
 

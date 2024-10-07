@@ -104,8 +104,8 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
   MX_GPDMA1_Init();
+  MX_GPIO_Init();
   MX_SBS_Init();
   MX_XSPI2_Init();
   MX_EXTMEM_MANAGER_Init();
