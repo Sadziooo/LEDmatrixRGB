@@ -175,8 +175,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   DWT_Init();
   HUB75_Init();
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
-  HAL_DMA_RegisterCallback(&handle_GPDMA1_Channel0,HAL_DMA_XFER_CPLT_CB_ID, HAL_DMA_XferCpltCallback);
+//  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+  HAL_DMA_RegisterCallback(&handle_GPDMA1_Channel0, HAL_DMA_XFER_CPLT_CB_ID, HAL_DMA_XferCpltCallback);
+  __HAL_TIM_ENABLE_DMA(&htim3, TIM_DMA_CC3);
 
 //  DrawRectangle(0, 0, 63, 31, 255, 255, 255);
 
@@ -266,19 +267,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  ScrollVertical(0);
-//	  ScrollHorizontal(1);
-//	  DMA_STATE = HAL_DMA_GetState(&handle_GPDMA1_Channel0);
-//
-//	  if(DMA_STATE == HAL_DMA_STATE_READY) {
-//		  HAL_DMA_Start_IT(&handle_GPDMA1_Channel0, (uint32_t)&testBuffer, (uint32_t)&GPIOE->ODR, sizeof(testBuffer));
-//	  }
-
-//	  HAL_Delay(500);
-//	  HAL_GPIO_TogglePin(LD3_GPIO_PORT, LD3_PIN);
-
-	  HUB75_SendRowData(); // Refresh display
-//	  HAL_Delay(scroll_speed);
+	  HUB75_SendRowData();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -312,17 +301,19 @@ void HUB75_SendRowData(void) {
 
             uint32_t delay_time = BASE_DELAY * (1 << bit);
 
-//            uint32_t sourceAddress = (uint32_t)&rgbDataBuffer[bit * MATRIX_WIDTH];
-            DMA_STATE = HAL_DMA_GetState(&handle_GPDMA1_Channel0);
-//			 Start DMA transfer for this bit-plane and row
-			HAL_DMA_Start_IT(&handle_GPDMA1_Channel0, (uint32_t)&rgbDataBuffer, (uint32_t)&GPIOE->ODR, 1024);
+            HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
 
+			// Start DMA transfer for the current bit-plane
+			dma_flag = 0;
+			HAL_DMA_Start_IT(&handle_GPDMA1_Channel0, (uint32_t)&rgbDataBuffer[MATRIX_WIDTH * bit], (uint32_t)&GPIOE->ODR, 128);
+
+			// Wait for the DMA transfer to complete
 			while (dma_flag != 1) {
-				DMA_STATE = HAL_DMA_GetState(&handle_GPDMA1_Channel0);
-				__NOP();
+				__NOP();  // Wait for DMA complete callback
 			}
 
-			dma_flag = 0;
+			// Stop PWM (TIM3) after DMA completes
+			HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_3);
 
             RGB_LAT(1);
             RGB_LAT(0);
